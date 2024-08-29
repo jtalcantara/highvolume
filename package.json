@@ -1,0 +1,16 @@
+{
+  "name": "high_volume_real_time",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ccxt": "^4.3.87",
+    "express": "^4.19.2"
+  }
+}

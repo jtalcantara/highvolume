@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Variação Percentual Futuros USDⓈ-M</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            position: relative;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            padding: 1em 1em 0 1em;
+            margin: 0;
+        }
+
+        table {
+            width: 100%;
+            padding: 20px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #loading {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background-color: #007bff;
+            border-radius: 50%;
+            animation: blink 1.5s infinite both;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes blink {
+
+            0%,
+            80%,
+            100% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 1;
+            }
+        }
+
+        .tableWrapper {
+            padding: 2em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Top Variação Percentual Futuros USDⓈ-M</h1>
+
+    <!-- Tabela que exibirá os resultados -->
+    <div class="tableWrapper">
+        <table id="disparityTable">
+            <thead>
+                <tr>
+                    <th>Par</th>
+                    <th>Volume</th>
+                    <th>Preço Abertura</th>
+                    <th>Preço Fechamento</th>
+                    <th>Variação (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Os dados serão preenchidos aqui dinamicamente -->
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Ícone de carregamento -->
+    <div id="loading">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+
+    <script>
+        async function fetchDisparities() {
+            // Exibe o ícone de carregamento
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const response = await fetch('/disparities');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('disparityTable').querySelector('tbody');
+                tableBody.innerHTML = ''; // Limpa a tabela para adicionar os novos dados
+
+                data.forEach(({ symbol, priceChangePercent, open, close, volume }) => {
+                    const row = document.createElement('tr');
+
+                    const link = `https://www.binance.com/pt/futures/${symbol}`;
+
+                    row.innerHTML = `
+                        <td><a href="${link}" target="_blank">${symbol}</a></td>
+                        <td>${volume}</td>
+                        <td>${open}</td>
+                        <td>${close}</td>
+                        <td>${priceChangePercent.toFixed(2)}%</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } finally {
+                // Esconde o ícone de carregamento quando a request é concluída
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        setInterval(fetchDisparities, 1000); // Atualiza a cada 1 segundo
+    </script>
+</body>
+
+</html>
