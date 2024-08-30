@@ -108,6 +108,20 @@
         .highlight {
             background-color: #d4edda; /* Verde claro */
         }
+
+        /* Elemento de destaque fora da tabela */
+        .highlighted-data {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #d4edda;
+            padding: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
     </style>
 </head>
 
@@ -166,6 +180,7 @@
             const alertThreshold = parseFloat(document.getElementById('alertThreshold').value);
 
             let alertNeeded = false; // Flag para indicar se o alerta é necessário
+            const highlightedData = []; // Armazena os dados que atenderam ao critério para exibição fora da tabela
 
             data.forEach(({ symbol, priceChangePercent, open, close, volume }) => {
                 const row = document.createElement('tr');
@@ -175,6 +190,7 @@
                 if (priceChangePercent > alertThreshold || priceChangePercent < -alertThreshold) {
                     row.classList.add('highlight');
                     alertNeeded = true; // Define a flag para alerta
+                    highlightedData.push({ symbol, priceChangePercent, open, close, volume }); // Adiciona aos dados destacados
                 }
 
                 row.innerHTML = `
@@ -186,6 +202,11 @@
                 `;
                 tableBody.appendChild(row);
             });
+
+            // Exibe os dados destacados fora da tabela
+            if (highlightedData.length > 0) {
+                showHighlightedData(highlightedData);
+            }
 
             // Verifica se é necessário emitir um alerta
             const currentTime = Date.now();
@@ -208,6 +229,29 @@
         document.getElementById('alertThreshold').addEventListener('input', (event) => {
             document.getElementById('alertThresholdValue').textContent = event.target.value;
         });
+
+        // Função para exibir os dados destacados fora da tabela
+        function showHighlightedData(data) {
+            const container = document.createElement('div');
+            container.classList.add('highlighted-data');
+
+            data.forEach(({ symbol, priceChangePercent, open, close, volume }) => {
+                const link = `https://www.binance.com/pt/futures/${symbol}`;
+
+                const item = document.createElement('div');
+                item.innerHTML = `
+                    <strong><a href="${link}" target="_blank">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}% (Volume: ${volume}, Abertura: ${open}, Fechamento: ${close})
+                `;
+                container.appendChild(item);
+            });
+
+            document.body.appendChild(container);
+
+            // Remove o elemento após 5 segundos
+            setTimeout(() => {
+                container.remove();
+            }, 5000);
+        }
     </script>
 </body>
 
