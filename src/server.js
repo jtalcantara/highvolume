@@ -34,29 +34,38 @@ async function monitorDisparities(ws) {
     // Mapeia para armazenar o último kline
     const lastKlines = {};
 
+    // Controla o tempo de envio de mensagens
+    let lastSentTime = 0;
+    const sendInterval = 100; // Envia atualizações a cada 100ms
+
     binanceWs.onmessage = (event) => {
         const message = JSON.parse(event.data);
         const { data } = message;
 
         if (data && data.k) {
             const { s: symbol, k: kline } = data;
-            if (kline.x) { // Verifica se o kline está fechado
-                const { o: open, l: last, v: volume } = kline;
-                const priceChangePercent = ((parseFloat(last) - parseFloat(open)) / parseFloat(open)) * 100;
-                lastKlines[symbol] = { priceChangePercent, open: parseFloat(open), close: parseFloat(last), volume: parseFloat(volume) };
-            }
+            const { o: open, c: last, v: volume } = kline;
+            const priceChangePercent = ((parseFloat(last) - parseFloat(open)) / parseFloat(open)) * 100;
+            lastKlines[symbol] = { priceChangePercent, open: parseFloat(open), close: parseFloat(last), volume: parseFloat(volume) };
         }
 
-        // Converte para array e ordena pelas maiores disparidades
-        const disparities = Object.keys(lastKlines).map(symbol => ({
-            symbol: symbol.replace('usdt', '').toUpperCase(),
-            ...lastKlines[symbol]
-        }));
+        const currentTime = Date.now();
 
-        const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceChangePercent) - Math.abs(a.priceChangePercent));
+        // Envia os dados somente a cada 100ms
+        if (currentTime - lastSentTime >= sendInterval) {
+            // Converte para array e ordena pelas maiores disparidades
+            const disparities = Object.keys(lastKlines).map(symbol => ({
+                symbol: symbol.replace('usdt', '').toUpperCase(),
+                ...lastKlines[symbol]
+            }));
 
-        // Envia os top 5 pares para o cliente WebSocket
-        ws.send(JSON.stringify(sortedDisparities.slice(0, 5)));
+            const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceChangePercent) - Math.abs(a.priceChangePercent));
+
+            // Envia os top 5 pares para o cliente WebSocket
+            ws.send(JSON.stringify(sortedDisparities.slice(0, 5)));
+
+            lastSentTime = currentTime; // Atualiza o tempo do último envio
+        }
     };
 
     binanceWs.onerror = (error) => {
