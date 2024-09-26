@@ -233,12 +233,12 @@
             const container = document.createElement('div');
             container.classList.add('highlighted-data');
 
-            data.forEach(({ symbol, priceChangePercent, open, close, volume }) => {
+            data.forEach(({ symbol, priceChangePercent, currentClose, previousClose }) => {
                 const link = `https://www.binance.com/pt/futures/${symbol}`;
 
                 const item = document.createElement('div');
                 item.innerHTML = `
-                    <strong><a href="${link}" target="_blank">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}% (Volume: ${volume}, Abertura: ${open}, Fechamento: ${close})
+                    <strong><a href="${link}" target="_blank">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}%, Anterior: ${previousClose}, Atual: ${currentClose})
                 `;
                 container.appendChild(item);
             });
@@ -248,7 +248,7 @@
             // Remove o elemento após 5 segundos
             setTimeout(() => {
                 container.remove();
-            }, 5000);
+            }, 15000);
         }
     </script>
 </body>
