@@ -131,7 +131,7 @@
     <!-- Configuração de alerta -->
     <div class="alert-settings">
         <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
-        <input type="range" id="alertThreshold" name="alertThreshold" min="0" max="2" step="0.1" value="0.9">
+        <input type="range" id="alertThreshold" name="alertThreshold" min="0.5" max="2" step="0.1" value="0.9">
         <span id="alertThresholdValue">0.9</span>%
     </div>
 
@@ -141,9 +141,8 @@
             <thead>
                 <tr>
                     <th>Par</th>
-                    <th>Volume</th>
-                    <th>Preço Abertura</th>
-                    <th>Preço Fechamento</th>
+                    <th>Preço Anterior</th>
+                    <th>Preço Atual</th>
                     <th>Variação (%)</th>
                 </tr>
             </thead>
@@ -182,7 +181,7 @@
             let alertNeeded = false; // Flag para indicar se o alerta é necessário
             const highlightedData = []; // Armazena os dados que atenderam ao critério para exibição fora da tabela
 
-            data.forEach(({ symbol, priceChangePercent, open, close, volume }) => {
+            data.forEach(({ symbol, previousClose, currentClose, priceChangePercent }) => {
                 const row = document.createElement('tr');
                 const link = `https://www.binance.com/pt/futures/${symbol}`;
 
@@ -190,14 +189,13 @@
                 if (priceChangePercent > alertThreshold || priceChangePercent < -alertThreshold) {
                     row.classList.add('highlight');
                     alertNeeded = true; // Define a flag para alerta
-                    highlightedData.push({ symbol, priceChangePercent, open, close, volume }); // Adiciona aos dados destacados
+                    highlightedData.push({ symbol, priceChangePercent, currentClose, previousClose }); // Adiciona aos dados destacados
                 }
 
                 row.innerHTML = `
                     <td><a href="${link}" target="_blank">${symbol}</a></td>
-                    <td>${volume}</td>
-                    <td>${open}</td>
-                    <td>${close}</td>
+                    <td>${previousClose}</td>
+                    <td>${currentClose}</td>
                     <td>${priceChangePercent.toFixed(2)}%</td>
                 `;
                 tableBody.appendChild(row);

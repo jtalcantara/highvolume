@@ -13,11 +13,16 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+const skipPairs = [
+    "CRVUSDT",
+    "XEMUSDT"
+]
+
 // Função para obter todos os pares USDⓈ-M
 async function getFuturesSymbols() {
     const response = await axios.get('https://fapi.binance.com/fapi/v1/exchangeInfo');
     const symbols = response.data.symbols
-        .filter(symbol => symbol.symbol.endsWith('USDT') && symbol.contractType === 'PERPETUAL')
+        .filter(symbol => symbol.symbol.endsWith('USDT') && symbol.contractType === 'PERPETUAL' && !skipPairs.includes(symbol.symbol))
         .map(symbol => symbol.symbol.toLowerCase());
     return symbols;
 }
@@ -25,43 +30,63 @@ async function getFuturesSymbols() {
 // Servidor WebSocket
 const wss = new WebSocket.Server({ port: wssPort });
 
-// Função para monitorar disparidades usando WebSocket da Binance
+// Função para monitorar variações de preço em tempo real usando WebSocket da Binance
 async function monitorDisparities(ws) {
     const symbols = await getFuturesSymbols(); // Obtém todos os pares USDⓈ-M
-    const streams = symbols.map(symbol => `${symbol}@kline_1m`).join('/');
+    const streams = symbols.map(symbol => `${symbol}@ticker`).join('/');
     const binanceWs = new WebSocket(`wss://fstream.binance.com/stream?streams=${streams}`);
 
-    // Mapeia para armazenar o último kline
-    const lastKlines = {};
+    // Mapeia para armazenar o último e o penúltimo preço de fechamento
+    const priceData = {};
 
     // Controla o tempo de envio de mensagens
     let lastSentTime = 0;
-    const sendInterval = 100; // Envia atualizações a cada 100ms
+    const sendInterval = 5000; // Atualiza a cada 5 segundo
 
     binanceWs.onmessage = (event) => {
         const message = JSON.parse(event.data);
         const { data } = message;
 
-        if (data && data.k) {
-            const { s: symbol, k: kline } = data;
-            const { o: open, c: last, v: volume } = kline;
-            const priceChangePercent = ((parseFloat(last) - parseFloat(open)) / parseFloat(open)) * 100;
-            lastKlines[symbol] = { priceChangePercent, open: parseFloat(open), close: parseFloat(last), volume: parseFloat(volume) };
+        if (data && data.c) {  // 'c' é o preço de fechamento atual
+            const { s: symbol, c: lastClose } = data; // 's' é o símbolo, 'c' é o preço de fechamento atual
+
+            if (priceData[symbol]) {
+                const previousClose = priceData[symbol].currentClose; // Preço de fechamento anterior
+
+                // Calcula a variação percentual comparando o último fechamento com o fechamento atual
+                const priceChangePercent = ((parseFloat(lastClose) - parseFloat(previousClose)) / parseFloat(previousClose)) * 100;
+
+                // Atualiza os dados de preço, incluindo o preço anterior e o preço atual
+                priceData[symbol] = {
+                    previousClose: previousClose,    // Preço anterior
+                    currentClose: parseFloat(lastClose), // Preço atual
+                    priceChangePercent              // Variação percentual
+                };
+            } else {
+                // Se for o primeiro preço, apenas armazena o fechamento atual
+                priceData[symbol] = {
+                    previousClose: parseFloat(lastClose), // Armazena o primeiro fechamento como "anterior"
+                    currentClose: parseFloat(lastClose),  // Também como o "atual" inicialmente
+                    priceChangePercent: 0
+                };
+            }
         }
 
         const currentTime = Date.now();
 
-        // Envia os dados somente a cada 100ms
+        // Envia os dados a cada 1 segundo
         if (currentTime - lastSentTime >= sendInterval) {
-            // Converte para array e ordena pelas maiores disparidades
-            const disparities = Object.keys(lastKlines).map(symbol => ({
+            // Converte para array e ordena pelas maiores variações
+            const disparities = Object.keys(priceData).map(symbol => ({
                 symbol: symbol.replace('usdt', '').toUpperCase(),
-                ...lastKlines[symbol]
+                previousClose: priceData[symbol].previousClose, // Preço anterior
+                currentClose: priceData[symbol].currentClose,   // Preço atual
+                priceChangePercent: priceData[symbol].priceChangePercent // Variação percentual
             }));
 
             const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceChangePercent) - Math.abs(a.priceChangePercent));
 
-            // Envia os top 5 pares para o cliente WebSocket
+            // Envia os top 5 pares com maiores variações para o cliente WebSocket
             ws.send(JSON.stringify(sortedDisparities.slice(0, 5)));
 
             lastSentTime = currentTime; // Atualiza o tempo do último envio
