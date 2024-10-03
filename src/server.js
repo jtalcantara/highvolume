@@ -15,7 +15,8 @@ app.get('/', (req, res) => {
 
 const skipPairs = [
     "CRVUSDT",
-    "XEMUSDT"
+    "XEMUSDT",
+    "LINAUSDT"
 ]
 
 // Função para obter todos os pares USDⓈ-M
@@ -41,7 +42,7 @@ async function monitorDisparities(ws) {
 
     // Controla o tempo de envio de mensagens
     let lastSentTime = 0;
-    const sendInterval = 5000; // Atualiza a cada 5 segundo
+    const sendInterval = 3000;
 
     binanceWs.onmessage = (event) => {
         const message = JSON.parse(event.data);
