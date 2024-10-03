@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top Variação Percentual Futuros USDⓈ-M</title>
+    <title>Variação Futuros USDⓈ-M</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -176,6 +176,24 @@
         const ws = new WebSocket('ws://localhost:3001');
         let lastAlertTime = 0;
         const alertDelay = 10000;
+        let originalTitle = document.title;
+        let alertInterval;
+
+        // Função para alternar o título da aba do navegador
+        function toggleTitle(message) {
+            let showAlert = false;
+            alertInterval = setInterval(() => {
+                document.title = showAlert ? message : originalTitle;
+                showAlert = !showAlert;
+            }, 1000); // Alterna o título a cada 1 segundo
+        }
+
+        // Função para restaurar o título original e parar a alternância
+        function resetTitle() {
+            clearInterval(alertInterval);
+            document.title = originalTitle;
+            alertInterval = null;
+        }
 
         const copySymbol = symbol => {
             navigator.clipboard.writeText(symbol).then(() => {
@@ -199,9 +217,7 @@
             data.forEach(({ symbol, previousClose, currentClose, priceChangePercent }) => {
                 const row = document.createElement('tr');
 
-                // Copiar símbolo ao clicar
-
-
+                // Condição para disparar alerta
                 if (priceChangePercent > alertThreshold || priceChangePercent < -alertThreshold) {
                     row.classList.add('highlight');
                     alertNeeded = true;
@@ -209,11 +225,11 @@
                 }
 
                 row.innerHTML = `
-                    <td><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></td>
-                    <td>${previousClose}</td>
-                    <td>${currentClose}</td>
-                    <td>${priceChangePercent.toFixed(2)}%</td>
-                `;
+            <td><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></td>
+            <td>${previousClose}</td>
+            <td>${currentClose}</td>
+            <td>${priceChangePercent.toFixed(2)}%</td>
+        `;
                 tableBody.appendChild(row);
             });
 
@@ -223,9 +239,19 @@
 
             const currentTime = Date.now();
             if (alertNeeded && (currentTime - lastAlertTime >= alertDelay)) {
+                // Toca o som de alerta
                 const alertSound = new Audio('./sounds/alert.mp3');
                 alertSound.play();
+
+                // Alterna o título da aba
+                toggleTitle(`⚠️ ${symbol - priceChangePercent.toFixed(2)} ⚠️`);
+
                 lastAlertTime = currentTime;
+
+                // Restaurar o título após 15 segundos
+                setTimeout(() => {
+                    resetTitle();
+                }, 15000);
             }
         };
 
@@ -256,8 +282,8 @@
             data.forEach(({ symbol, priceChangePercent, currentClose, previousClose }) => {
                 const item = document.createElement('div');
                 item.innerHTML = `
-                    <strong><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}%, Anterior: ${previousClose}, Atual: ${currentClose}
-                `;
+            <strong><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}%, Anterior: ${previousClose}, Atual: ${currentClose}
+        `;
                 container.appendChild(item);
             });
 

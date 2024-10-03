@@ -42,7 +42,7 @@ async function monitorDisparities(ws) {
 
     // Controla o tempo de envio de mensagens
     let lastSentTime = 0;
-    const sendInterval = 3000;
+    const sendInterval = 4000;
 
     binanceWs.onmessage = (event) => {
         const message = JSON.parse(event.data);
