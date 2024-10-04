@@ -34,10 +34,10 @@ const wss = new WebSocket.Server({ port: wssPort });
 // Função para monitorar variações de preço em tempo real usando WebSocket da Binance
 async function monitorDisparities(ws) {
     const symbols = await getFuturesSymbols(); // Obtém todos os pares USDⓈ-M
-    const streams = symbols.map(symbol => `${symbol}@ticker`).join('/');
+    const streams = symbols.map(symbol => `${symbol}@kline_1m`).join('/');
     const binanceWs = new WebSocket(`wss://fstream.binance.com/stream?streams=${streams}`);
 
-    // Mapeia para armazenar o último e o penúltimo preço de fechamento
+    // Mapeia para armazenar os dados do candle
     const priceData = {};
 
     // Controla o tempo de envio de mensagens
@@ -48,41 +48,52 @@ async function monitorDisparities(ws) {
         const message = JSON.parse(event.data);
         const { data } = message;
 
-        if (data && data.c) {  // 'c' é o preço de fechamento atual
-            const { s: symbol, c: lastClose } = data; // 's' é o símbolo, 'c' é o preço de fechamento atual
+        if (data && data.k) {  // 'k' contém os dados do candle
+            const { s: symbol, k: { o: openPrice, c: closePrice, h: high, l: low } } = data; // 's' é o símbolo, 'o' é o preço de abertura, 'c' é o preço de fechamento
 
             if (priceData[symbol]) {
                 const previousClose = priceData[symbol].currentClose; // Preço de fechamento anterior
 
                 // Calcula a variação percentual comparando o último fechamento com o fechamento atual
-                const priceChangePercent = ((parseFloat(lastClose) - parseFloat(previousClose)) / parseFloat(previousClose)) * 100;
+                const priceChangePercent = ((parseFloat(closePrice) - parseFloat(previousClose)) / parseFloat(previousClose)) * 100;
+                const priceOpenChangePercent = ((parseFloat(closePrice) - parseFloat(openPrice)) / parseFloat(openPrice)) * 100;
+                const amplitude = ((parseFloat(low) - parseFloat(high)) / parseFloat(high)) * 100;
 
-                // Atualiza os dados de preço, incluindo o preço anterior e o preço atual
+                // Atualiza os dados de preço
                 priceData[symbol] = {
-                    previousClose: previousClose,    // Preço anterior
-                    currentClose: parseFloat(lastClose), // Preço atual
-                    priceChangePercent              // Variação percentual
+                    previousClose: previousClose,
+                    currentClose: parseFloat(closePrice),
+                    openPrice,
+                    priceChangePercent,
+                    priceOpenChangePercent,
+                    amplitude
                 };
             } else {
                 // Se for o primeiro preço, apenas armazena o fechamento atual
                 priceData[symbol] = {
-                    previousClose: parseFloat(lastClose), // Armazena o primeiro fechamento como "anterior"
-                    currentClose: parseFloat(lastClose),  // Também como o "atual" inicialmente
-                    priceChangePercent: 0
+                    previousClose: parseFloat(closePrice), // Armazena o primeiro fechamento como "anterior"
+                    currentClose: parseFloat(closePrice),
+                    openPrice,  // Preço de abertura
+                    priceChangePercent: 0,
+                    priceOpenChangePercent: 0,
+                    amplitude: 0
                 };
             }
         }
 
         const currentTime = Date.now();
 
-        // Envia os dados a cada 1 segundo
+        // Envia os dados a cada 4 segundos
         if (currentTime - lastSentTime >= sendInterval) {
             // Converte para array e ordena pelas maiores variações
             const disparities = Object.keys(priceData).map(symbol => ({
                 symbol: symbol.replace('usdt', '').toUpperCase(),
-                previousClose: priceData[symbol].previousClose, // Preço anterior
-                currentClose: priceData[symbol].currentClose,   // Preço atual
-                priceChangePercent: priceData[symbol].priceChangePercent // Variação percentual
+                previousClose: priceData[symbol].previousClose,
+                currentClose: priceData[symbol].currentClose,
+                openPrice: priceData[symbol].openPrice,
+                priceChangePercent: priceData[symbol].priceChangePercent,
+                priceOpenChangePercent: priceData[symbol].priceOpenChangePercent,
+                amplitude: priceData[symbol].amplitude,
             }));
 
             const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceChangePercent) - Math.abs(a.priceChangePercent));
@@ -90,7 +101,7 @@ async function monitorDisparities(ws) {
             // Envia os top 5 pares com maiores variações para o cliente WebSocket
             ws.send(JSON.stringify(sortedDisparities.slice(0, 5)));
 
-            lastSentTime = currentTime; // Atualiza o tempo do último envio
+            lastSentTime = currentTime;
         }
     };
 
@@ -104,7 +115,7 @@ async function monitorDisparities(ws) {
 
     ws.on('close', () => {
         console.log('Cliente desconectado do WebSocket');
-        binanceWs.close(); // Fecha a conexão WebSocket da Binance quando o cliente se desconectar
+        binanceWs.close();
     });
 }
 

@@ -21,7 +21,7 @@
         }
 
         table {
-            width: 100%;
+            /* width: 100%; */
             padding: 20px;
             border-collapse: collapse;
         }
@@ -74,6 +74,12 @@
             animation-delay: 0.6s;
         }
 
+        h1 {
+            padding: 0.5em 0;
+            display: table;
+            margin: 0 auto;
+        }
+
         @keyframes blink {
 
             0%,
@@ -88,15 +94,18 @@
         }
 
         .tableWrapper {
-            padding: 2em;
+            padding: 0;
+            margin: 2em auto;
+            display: table;
         }
 
         .alert-settings {
-            padding: 1em;
+            margin: 0.5em auto;
+            display: table;
+            padding: 1.4em 5em;
             background-color: #fff;
             border: 1px solid #ddd;
-            margin: 1em;
-            border-radius: 5px;
+            border-radius: 15px;
         }
 
         .alert-settings label {
@@ -145,18 +154,18 @@
 
     <div class="alert-settings">
         <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
-        <input type="range" id="alertThreshold" name="alertThreshold" min="0.2" max="1" step="0.05" value="0.3">
-        <span id="alertThresholdValue">0.3</span>%
+        <input type="range" id="alertThreshold" name="alertThreshold" min="0.4" max="1" step="0.05" value="0.4">
+        <span id="alertThresholdValue">0.4</span>%
     </div>
 
     <div class="tableWrapper">
         <table id="disparityTable">
             <thead>
                 <tr>
-                    <th>Par</th>
-                    <th>Preço Anterior</th>
-                    <th>Preço Atual</th>
-                    <th>Variação (%)</th>
+                    <th>Simbolo</th>
+                    <th>Antes -> Atual </th>
+                    <th>Abertura -> Atual</th>
+                    <th>Amplitude</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -214,7 +223,7 @@
             let alertNeeded = false;
             const highlightedData = [];
 
-            data.forEach(({ symbol, previousClose, currentClose, priceChangePercent }) => {
+            data.forEach(({ symbol, previousClose, openPrice, currentClose, priceChangePercent, priceOpenChangePercent, amplitude }) => {
                 const row = document.createElement('tr');
 
                 // Condição para disparar alerta
@@ -226,9 +235,9 @@
 
                 row.innerHTML = `
             <td><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></td>
-            <td>${previousClose}</td>
-            <td>${currentClose}</td>
-            <td>${priceChangePercent.toFixed(2)}%</td>
+            <td>${previousClose} -> ${currentClose}: ${priceChangePercent.toFixed(2)}%</td>
+            <td>${openPrice} -> ${currentClose}: ${priceOpenChangePercent.toFixed(2)}%</td>
+            <td>${amplitude.toFixed(2)}%</td>
         `;
                 tableBody.appendChild(row);
             });
@@ -244,7 +253,7 @@
                 alertSound.play();
 
                 // Alterna o título da aba
-                toggleTitle(`⚠️ ${symbol - priceChangePercent.toFixed(2)} ⚠️`);
+                toggleTitle(`⚠️ ${highlightedData[0].symbol}: ${highlightedData[0].priceChangePercent.toFixed(2)}% ⚠️`);
 
                 lastAlertTime = currentTime;
 
@@ -282,8 +291,11 @@
             data.forEach(({ symbol, priceChangePercent, currentClose, previousClose }) => {
                 const item = document.createElement('div');
                 item.innerHTML = `
-            <strong><a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a></strong>: Variação ${priceChangePercent.toFixed(2)}%, Anterior: ${previousClose}, Atual: ${currentClose}
-        `;
+                    <strong>
+                        <a href="javascript:void(0)" onclick="copySymbol('${symbol}')">${symbol}</a>
+                    </strong>: 
+                        ${previousClose} -> ${currentClose} = ${priceChangePercent.toFixed(2)}%
+                `;
                 container.appendChild(item);
             });
 
