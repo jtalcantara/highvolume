@@ -6,6 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Variação Futuros USDⓈ-M</title>
     <style>
+        /* Estilo para o modal */
+        #interactionModal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+        }
+
+        #interactionModal .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #interactionModal .modal-content button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #interactionModal .modal-content button:hover {
+            background-color: #0056b3;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -150,26 +186,36 @@
 </head>
 
 <body>
-    <h1>Top Variação Percentual Futuros USDⓈ-M</h1>
+    <div class="bodyWrapper">
+        <h1>Top Variação Percentual Futuros USDⓈ-M</h1>
 
-    <div class="alert-settings">
-        <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
-        <input type="range" id="alertThreshold" name="alertThreshold" min="0.4" max="1" step="0.05" value="0.4">
-        <span id="alertThresholdValue">0.4</span>%
+        <div class="alert-settings">
+            <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
+            <input type="range" id="alertThreshold" name="alertThreshold" min="0.1" max="1" step="0.05" value="0.1">
+            <span id="alertThresholdValue">0.1</span>%
+        </div>
+
+        <div class="tableWrapper">
+            <table id="disparityTable">
+                <thead>
+                    <tr>
+                        <th>Simbolo</th>
+                        <th>Antes -> Atual </th>
+                        <th>Abertura -> Atual</th>
+                        <th>Amplitude</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="tableWrapper">
-        <table id="disparityTable">
-            <thead>
-                <tr>
-                    <th>Simbolo</th>
-                    <th>Antes -> Atual </th>
-                    <th>Abertura -> Atual</th>
-                    <th>Amplitude</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <!-- Modal de interação -->
+    <div id="interactionModal">
+        <div class="modal-content">
+            <p>Clique no botão abaixo para iniciar a experiência.</p>
+            <button id="startButton">Iniciar</button>
+        </div>
     </div>
 
     <div id="loading">
@@ -184,7 +230,7 @@
     <script>
         const ws = new WebSocket('ws://localhost:3001');
         let lastAlertTime = 0;
-        const alertDelay = 10000;
+        const alertDelay = 5000;
         let originalTitle = document.title;
         let alertInterval;
 
@@ -214,7 +260,7 @@
             console.log('Conectado ao WebSocket');
         };
 
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
             const data = JSON.parse(event.data);
             const tableBody = document.getElementById('disparityTable').querySelector('tbody');
             tableBody.innerHTML = '';
@@ -249,8 +295,8 @@
             const currentTime = Date.now();
             if (alertNeeded && (currentTime - lastAlertTime >= alertDelay)) {
                 // Toca o som de alerta
-                const alertSound = new Audio('./sounds/alert.mp3');
-                alertSound.play();
+                const audio = new Audio('./sounds/alert.mp3');
+                audio.play()
 
                 // Alterna o título da aba
                 toggleTitle(`⚠️ ${highlightedData[0].symbol}: ${highlightedData[0].priceChangePercent.toFixed(2)}% ⚠️`);
@@ -305,6 +351,20 @@
                 container.remove();
             }, 15000);
         }
+
+        // Função que será chamada quando o usuário clicar no botão "Iniciar"
+        document.getElementById('startButton').addEventListener('click', () => {
+            // Fechar o modal
+            document.getElementById('interactionModal').style.display = 'none';
+
+            // Agora o som poderá ser reproduzido
+            const alertSound = new Audio('./sounds/alert.mp3');
+            alertSound.play().catch(error => {
+                console.error('Erro ao reproduzir o som:', error);
+            });
+
+            // Qualquer outra lógica que dependa da interação do usuário
+        });
     </script>
 </body>
 
