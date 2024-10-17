@@ -191,8 +191,8 @@
 
         <div class="alert-settings">
             <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
-            <input type="range" id="alertThreshold" name="alertThreshold" min="0.1" max="1" step="0.05" value="0.1">
-            <span id="alertThresholdValue">0.1</span>%
+            <input type="range" id="alertThreshold" name="alertThreshold" min="0.5" max="2" step="0.05" value="0.5">
+            <span id="alertThresholdValue">0.5</span>%
         </div>
 
         <div class="tableWrapper">
@@ -273,7 +273,7 @@
                 const row = document.createElement('tr');
 
                 // Condição para disparar alerta
-                if (priceChangePercent > alertThreshold || priceChangePercent < -alertThreshold) {
+                if (priceOpenChangePercent > alertThreshold || priceOpenChangePercent < -alertThreshold) {
                     row.classList.add('highlight');
                     alertNeeded = true;
                     highlightedData.push({ symbol, priceChangePercent, currentClose, previousClose });

@@ -36,7 +36,7 @@ const wss = new WebSocket.Server({ port: wssPort });
 // Função para monitorar variações de preço em tempo real usando WebSocket da Binance
 async function monitorDisparities(ws) {
     const symbols = await getFuturesSymbols(); // Obtém todos os pares USDⓈ-M
-    const streams = symbols.map(symbol => `${symbol}@kline_1m`).join('/');
+    const streams = symbols.map(symbol => `${symbol}@kline_15m`).join('/');
     const binanceWs = new WebSocket(`wss://fstream.binance.com/stream?streams=${streams}`);
 
     // Mapeia para armazenar os dados do candle
@@ -44,7 +44,7 @@ async function monitorDisparities(ws) {
 
     // Controla o tempo de envio de mensagens
     let lastSentTime = 0;
-    const sendInterval = 8000;
+    const sendInterval = 5000;
 
     binanceWs.onmessage = (event) => {
         const message = JSON.parse(event.data);
@@ -98,7 +98,7 @@ async function monitorDisparities(ws) {
                 amplitude: priceData[symbol].amplitude,
             }));
 
-            const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceChangePercent) - Math.abs(a.priceChangePercent));
+            const sortedDisparities = disparities.sort((a, b) => Math.abs(b.priceOpenChangePercent) - Math.abs(a.priceOpenChangePercent));
 
             // Envia os top 5 pares com maiores variações para o cliente WebSocket
             ws.send(JSON.stringify(sortedDisparities.slice(0, 5)));
