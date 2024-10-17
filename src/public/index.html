@@ -191,8 +191,8 @@
 
         <div class="alert-settings">
             <label for="alertThreshold">Alerta se variação percentual for maior que:</label>
-            <input type="range" id="alertThreshold" name="alertThreshold" min="0.5" max="2" step="0.05" value="0.5">
-            <span id="alertThresholdValue">0.5</span>%
+            <input type="range" id="alertThreshold" name="alertThreshold" min="1.5" max="3" step="0.1" value="1.5">
+            <span id="alertThresholdValue">1.5</span>%
         </div>
 
         <div class="tableWrapper">
@@ -230,7 +230,7 @@
     <script>
         const ws = new WebSocket('ws://localhost:3001');
         let lastAlertTime = 0;
-        const alertDelay = 5000;
+        const alertDelay = 15000;
         let originalTitle = document.title;
         let alertInterval;
 
