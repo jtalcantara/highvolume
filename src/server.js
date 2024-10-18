@@ -18,7 +18,8 @@ const skipPairs = [
     "XEMUSDT",
     "LINAUSDT",
     "FLOWUSDT",
-    "EOSUSDT"
+    "EOSUSDT",
+    "REEFUSDT"
 ]
 
 // Função para obter todos os pares USDⓈ-M
