@@ -36,7 +36,7 @@ const wss = new WebSocket.Server({ port: wssPort });
 // Função para monitorar variações de preço em tempo real usando WebSocket da Binance
 async function monitorDisparities(ws) {
     const symbols = await getFuturesSymbols(); // Obtém todos os pares USDⓈ-M
-    const streams = symbols.map(symbol => `${symbol}@kline_15m`).join('/');
+    const streams = symbols.map(symbol => `${symbol}@kline_1m`).join('/');
     const binanceWs = new WebSocket(`wss://fstream.binance.com/stream?streams=${streams}`);
 
     // Mapeia para armazenar os dados do candle
